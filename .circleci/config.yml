@@ -4,6 +4,7 @@ orbs:
   ghostinspector: ghostinspector/test-runner@dev:02
 
 # publish dev orb
+# - can this be referenced inline
 # test against orb scenarios
 # [ ] better info for bad API key
 # [ ] debug?
