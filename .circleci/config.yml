@@ -6,7 +6,7 @@ orbs:
 # publish dev orb
 # - can this be referenced inline
 # test against orb scenarios
-# [ ] better info for bad API key
+# [x] better info for bad API key -> orb will complain about key missing if not in env
 # [ ] debug?
 # [ ] startUrl
 # [ ] extraParams
@@ -14,8 +14,7 @@ orbs:
 
 jobs:
   execute-test-orb:
-    docker: 
-      - image: ghostinspector/test-runner-standalone
+    executor: ghostinspector/default
     steps:
       - ghostinspector/execute-test:
           start-url: https://ghostinspector.com/
