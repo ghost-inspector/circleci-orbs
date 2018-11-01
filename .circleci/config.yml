@@ -22,6 +22,11 @@ jobs:
           id: 5bdb20218faf2b12926dd9c9
           extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
           wait: true
+      - ghostinspector/execute-suite:
+          start-url: https://ghostinspector.com/
+          id: 5bdb1f808faf2b12926dcd62
+          extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
+          wait: true
 
 workflows:
   test:
