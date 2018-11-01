@@ -1,0 +1,28 @@
+version: 2.1
+orbs:
+  orb-tools: circleci/orb-tools@volatile
+  ghostinspector: ghostinspector/test-runner@dev:02
+
+# publish dev orb
+# test against orb scenarios
+# [ ] better info for bad API key
+# [ ] debug?
+# [ ] startUrl
+# [ ] extraParams
+# publish prod orb
+
+jobs:
+  execute-test-orb:
+    docker: 
+      - image: ghostinspector/test-runner-standalone
+    steps:
+      - ghostinspector/execute-test:
+          api-key: af923ddcd57dcaca093c7369f3768abf631bb379
+          id: 5bdb20218faf2b12926dd9c9
+          extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
+          wait: true
+
+workflows:
+  test:
+    jobs:
+      - execute-test-orb
