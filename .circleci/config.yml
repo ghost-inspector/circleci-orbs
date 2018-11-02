@@ -8,8 +8,8 @@ orbs:
 # test against orb scenarios
 # [x] better info for bad API key -> orb will complain about key missing if not in env
 # [ ] debug?
-# [ ] startUrl
-# [ ] extraParams
+# [x] startUrl
+# [x] extraParams
 # publish prod orb
 
 executors:
