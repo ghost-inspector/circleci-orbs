@@ -48,11 +48,11 @@ jobs:
             docker run -d \
               --network gi-docker-network \
               --name test-application \
-              ghostinspector/standalone-app:latest --sha=$CIRCLE_SHA1
+              ghostinspector/standalone-app:latest --sha=b1692b69eb664eb299ca3d9c702246244df153e5
       - ghostinspector/test-standalone-app:
           suite-id: 5bdb3d05d69d3646d07b4af1
           network: gi-docker-network
-          extra-params: '{"sha":"$CIRCLE_SHA1"}'
+          extra-params: '{"sha":"b1692b69eb664eb299ca3d9c702246244df153e5"}'
           vpn-target: test-application:8000
 workflows:
   test:
