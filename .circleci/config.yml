@@ -11,6 +11,10 @@ orbs:
 # [ ] startUrl
 # [ ] extraParams
 # publish prod orb
+executors:
+  docker-executor:
+    docker: 
+      - image: docker:17.05.0-ce-git
 
 jobs:
   execute-test-command:
@@ -30,9 +34,7 @@ jobs:
           extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
           wait: true
   test-standalone-app-command:
-    executor:
-      docker: 
-        - image: docker:17.05.0-ce-git
+    executor: docker-executor
       steps:
         - setup_remote_docker
         - run:
