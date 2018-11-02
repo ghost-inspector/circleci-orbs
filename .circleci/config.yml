@@ -60,4 +60,3 @@ workflows:
       - execute-test-command
       - execute-suite-command
       - test-standalone-app-command
-
