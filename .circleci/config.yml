@@ -56,5 +56,7 @@ jobs:
 workflows:
   test:
     jobs:
-      - execute-test-orb
+      - execute-test-command
+      - execute-suite-command
+      - test-standalone-app-command
 
