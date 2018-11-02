@@ -31,7 +31,7 @@ orbs:
   ghostinspector: ghostinspector/test-runner@1.0.0
 jobs:
   build:
-    executor: default
+    executor: ghostinspector/default
     steps:
       - ghostinspector/execute-suite:
           id: <my-suite-id>
