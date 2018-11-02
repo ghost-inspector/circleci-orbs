@@ -52,7 +52,7 @@ jobs:
       - ghostinspector/test-standalone-app:
           suite-id: 5bdb3d05d69d3646d07b4af1
           network: gi-docker-network
-          extra-params: "{""sha"":""$CIRCLE_SHA1""}"
+          extra-params: "{\\\"sha\\\":\\\"$CIRCLE_SHA1\\\"}"
           vpn-target: test-application:8000
 workflows:
   test:
