@@ -3,15 +3,6 @@ orbs:
   orb-tools: circleci/orb-tools@volatile
   ghostinspector: ghostinspector/test-runner@dev:02
 
-# publish dev orb
-# - can this be referenced inline
-# test against orb scenarios
-# [x] better info for bad API key -> orb will complain about key missing if not in env
-# [ ] debug?
-# [x] startUrl
-# [x] extraParams
-# publish prod orb
-
 executors:
   docker-executor:
     docker: 
