@@ -13,7 +13,7 @@ orbs:
 # publish prod orb
 
 jobs:
-  execute-test-orb:
+  execute-test-command:
     executor: ghostinspector/default
     steps:
       - ghostinspector/execute-test:
@@ -21,12 +21,36 @@ jobs:
           id: 5bdb20218faf2b12926dd9c9
           extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
           wait: true
+  execute-suite-command:
+    executor: ghostinspector/default
+    steps:
       - ghostinspector/execute-suite:
           start-url: https://ghostinspector.com/
           id: 5bdb1f808faf2b12926dcd62
           extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
           wait: true
-
+  test-standalone-app-command:
+    executor:
+      docker: 
+        - image: docker:17.05.0-ce-git
+      steps:
+        - setup_remote_docker
+        - run:
+            name: Set up temporary docker network
+            command: docker network create gi-docker-network
+        - run:
+            name: Start your application container, specifying application port and docker network
+            command: |
+              docker pull ghostinspector/standalone-app:latest
+              docker run -d \
+                --network gi-docker-network \
+                --name test-application \
+                ghostinspector/standalone-app:latest --sha=$CIRCLE_SHA1
+        - ghostinspector/test-standalone-app:
+            suite-id: 5bdb3d05d69d3646d07b4af1
+            network: gi-docker-network
+            extra-params: '{"sha":"$CIRCLE_SHA1"}'
+            vpn-target: test-application:8000
 workflows:
   test:
     jobs:
