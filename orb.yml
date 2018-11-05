@@ -1,0 +1,279 @@
+version: 2.1
+
+description: |
+  An orb for executing your Ghost Inspector tests and suites within your CircleCI build environment.
+  This orb provides commands to get up and running quicky with your Ghost Inspector integration.
+  The source for this Orb can be found here: https://github.com/ghost-inspector/circleci-orbs
+
+examples:
+  execute-ghost-inspector-test:
+    description: Same Ghost Inspector test execution.
+    usage:
+      version: 2.1
+      orbs:
+        ghostinspector: ghostinspector/test-runner@1.0.0
+      jobs:
+        build:
+          executor: ghostinspector/default
+          steps:
+            - ghostinspector/execute-test:
+                id: <my-test-id>
+                extra-params: '{"foo": "bar", "other": "var"}'
+                wait: true
+  execute-ghost-inspector-suite:
+    description: Sample Ghost Inspector suite execution.
+    usage:
+      version: 2.1
+      orbs:
+        ghostinspector: ghostinspector/test-runner@1.0.0
+      jobs:
+        build:
+          executor: default
+          steps:
+            - ghostinspector/execute-suite:
+                id: <my-suite-id>
+                extra-params: '{"myVar": "foo", "otherVar": "bar"}'
+                wait: true
+  test-standalone-app:
+    description: Execute a Ghost Inspector test suite against a your dockerized application container.
+    usage:
+      version: 2.1
+      orbs:
+        ghostinspector: ghostinspector/test-runner@1.0.0
+      executors:
+        docker-executor:
+          docker:
+            - image: docker:17.05.0-ce-git
+      jobs:
+        build_and_test:
+          executor: docker-executor
+          steps:
+            - setup_remote_docker
+            - run:
+                name: Set up temporary docker network
+                command: docker network create my-docker-network
+            - run:
+                name: Start your application container, specifying application port and docker network
+                command: |
+                  docker run -d \
+                    -e PORT=8080 \
+                    --network my-docker-network \
+                    --name my-app \
+                    my-docker-image
+            - ghostinspector/test-docker-app:
+                api-key: <my-ghost-inspector-api-key>
+                suite-id: <my-ghost-inspector-suite-id>
+                network: my-docker-network
+                vpn-token: <my-ngrok-token>
+                vpn-target: my-docker-image:8080
+
+orbs:
+  internal:
+    commands:
+      execute:
+        description: Trigger your Ghost Inspector test or suite, optionally wait for the result.
+        parameters:
+          api-key:
+            type: string
+            description: Your Ghost Inspector API key.
+          id:
+            type: string
+            description: ID of the Ghost Inspector test or suite to execute.
+          endpoint:
+            type: string
+            description: (optional) API endpoint ("test" or "suite") to call, defaults to "suite".
+            enum: ['test', 'suite']
+            default: suite
+          start-url:
+            type: string
+            description: (optional) Modify the start URL to execute your test or suite against.
+            default: ''
+          extra-params:
+            type: string
+            description: (optional) Extra parameters to POST to the execute endpoint, in JSON format, defaults to `{}`.
+            default: '{}'
+          wait:
+            type: boolean
+            description: (optional) Wait for the test execution to complete before proceeding, defaults to `false`.
+            default: false
+        steps:
+          - run:
+              name: Execute Ghost Inspector tests
+              command: |
+                # add the &startUrl param if specified
+                START_URL=''
+                if [ '<< parameters.start-url >>' != '' ]; then
+                  START_URL='&startUrl=<< parameters.start-url >>'
+                fi
+                EXECUTE_URL="https://api.ghostinspector.com/v1/<< parameters.endpoint >>s/<< parameters.id >>/execute/?apiKey=<< parameters.api-key >>&immediate=1$START_URL"
+                echo "Execute URL: $EXECUTE_URL"
+                # TODO: test json params with jq
+                EXECUTE_RESULT=$(curl -s -XPOST -H'Content-Type: application/json' -d'<< parameters.extra-params >>' "$EXECUTE_URL")
+                if [ '<< parameters.wait >>' == 'false' ]; then
+                  # if we're not waiting for a result, execute
+                  echo $EXECUTE_RESULT
+                  exit 0
+                else
+                  # initialize variables
+                  STATUS='null'
+                  PASSING=
+                  # parse result ID from execution
+                  RESULT_ID=$(echo $EXECUTE_RESULT | jq -r '.data._id')
+                  # Poll for the suite result, sleep for a few seconds if it hasn't changed
+                  echo "Polling for << parameters.endpoint >> results (ID: $RESULT_ID)"
+                  RESULTS_ENDPOINT='results'
+                  if [ '<< parameters.endpoint >>' == 'suite' ]; then
+                    RESULTS_ENDPOINT='suite-results'
+                  fi
+
+                  while [ "$STATUS" == 'null' ]; do
+                    sleep 5
+                    FINAL_STATUS=$(curl -s "https://api.ghostinspector.com/v1/$RESULTS_ENDPOINT/$RESULT_ID/?apiKey=<< parameters.api-key >>")
+                    STATUS=$(echo $FINAL_STATUS | jq -r '.data.passing')
+                    # echo " - status: $STATUS"
+                  done
+                  # status has been updated, check results for "passing"
+                  if [ "$(echo $FINAL_STATUS | jq -r '.data.passing')" != 'true' ]; then
+                    echo "Suite failed! ¯\_(ツ)_/¯"
+                    PASSING=1
+                  else 
+                    echo "Suite passed! \o/"
+                    PASSING=0
+                  fi
+                  # return our passing status
+                  exit $PASSING
+                fi
+
+commands:
+  execute-test:
+    description: |
+      Trigger your Ghost Inspector test from a CircleCI build, passing in the test `id`, optional
+      `extra-params` required for your test, and optional `start-url`. Your `api-key` will be
+      read from the environment variable `$GI_API_KEY` if set, or can be provided explicitly in
+      the `ghostinspector/execute-test` command with the `api-key` parameter. By specifying `wait`
+      as `true` the test runner will pass or fail your build with the status of your test.
+
+      It is recommended that you use the `ghostinspector/default` executor to run this command,
+      however if you wish to use a different executor, simply ensure that `curl` and `jq` are
+      installed and available on the `$PATH`.
+    parameters:
+      api-key:
+        type: string
+        description: Your Ghost Inspector API key.
+        default: $GI_API_KEY
+      id:
+        type: string
+        description: ID of the Ghost Inspector test to execute.
+      start-url:
+        type: string
+        description: (optional) Modify the start URL to execute your test against.
+        default: ''
+      extra-params:
+        type: string
+        description: (optional) Extra parameters to POST to the execute endpoint, in JSON format, defaults to `{}`.
+        default: '{}'
+      wait:
+        type: boolean
+        description: (optional) Wait for the test execution to complete before proceeding, defaults to `false`.
+        default: false
+    steps:
+      - internal/execute:
+          endpoint: test
+          api-key: << parameters.api-key >>
+          id: << parameters.id >>
+          start-url: << parameters.start-url >>
+          extra-params: << parameters.extra-params >>
+          wait: << parameters.wait >>
+  execute-suite:
+    description: |
+      Trigger your Ghost Inspector suite from a CircleCI build, passing in the suite `id`, optional
+      `extra-params` required for your suite, and optional `start-url`. Your `api-key` will be
+      read from the environment variable `$GI_API_KEY` if set, or can be provided explicitly in
+      the `ghostinspector/execute-suite` command with the `api-key` parameter. By specifying `wait`
+      as `true` the test runner will pass or fail your build with the status of your suite.
+
+      It is recommended that you use the `ghostinspector/default` executor to run this command,
+      however if you wish to use a different executor, simply ensure that `curl` and `jq` are
+      installed and available on the `$PATH`.
+    parameters:
+      api-key:
+        type: string
+        description: Your Ghost Inspector API key.
+        default: $GI_API_KEY
+      id:
+        type: string
+        description: ID of the Ghost Inspector suite to execute.
+      start-url:
+        type: string
+        description: (optional) Modify the start URL to execute your suite against.
+        default: ''
+      extra-params:
+        type: string
+        description: (optional) Extra parameters to POST to the execute endpoint, in JSON format, defaults to `{}`.
+        default: '{}'
+      wait:
+        type: boolean
+        description: (optional) Wait for the suite execution to complete before proceeding, defaults to `false`.
+        default: false
+    steps:
+      - internal/execute:
+          endpoint: suite
+          api-key: << parameters.api-key >>
+          id: << parameters.id >>
+          start-url: << parameters.start-url >>
+          extra-params: << parameters.extra-params >>
+          wait: << parameters.wait >>
+
+  test-standalone-app:
+    description: |
+      Execute a Ghost Inspector test suite against a running application container by passing the
+      command the `vpn-target` of your running application. Specify the Ghost Inspector `suite-id`
+      you wish to run against your application and provide any `extra-params` as a JSON string to
+      pass into your test suite at run time.  Your `api-key` will be read from the environment
+      variable `$GI_API_KEY` if set, or can be provided explicitly in the
+      `ghostinspector/test-standalone-app` command with the `api-key` parameter.
+    parameters:
+      api-key:
+        description: Your Ghost Inspector API key.
+        type: string
+        default: $GI_API_KEY
+      suite-id:
+        description: The ID of the Ghost Inspector test suite to execute.
+        type: string
+      extra-params:
+        type: string
+        description: (optional) Extra parameters to POST to the execute endpoint, in JSON format, defaults to `{}`.
+        default: '{}'
+      vpn-token:
+        description: Your ngrok API key.
+        type: string
+        default: $GI_VPN_TOKEN
+      vpn-target:
+        description: |
+          A combination of the container hostname (from the `--name` argument used to start the
+          container) and port on your docker container where the application under test may be
+          reached, example `my-app:8000`.
+        type: string
+      network:
+        description: |
+          The name of the docker network (from the `--network` argument used to start the container)
+          attached to your running application container.
+        type: string
+    steps:
+      - run:
+          name: Execute Ghost Inspector test suite
+          command: |
+            docker pull ghostinspector/test-runner-standalone:latest
+            docker run \
+              -e NGROK_TOKEN=<< parameters.vpn-token >> \
+              -e GI_API_KEY=<< parameters.api-key >> \
+              -e GI_SUITE=<< parameters.suite-id >> \
+              -e GI_PARAMS_JSON='<< parameters.extra-params >>' \
+              -e APP_PORT=<< parameters.vpn-target >> \
+              --network << parameters.network >> \
+              ghostinspector/test-runner-standalone:latest
+
+executors:
+  default:
+    docker:
+      - image: ghostinspector/test-runner-standalone

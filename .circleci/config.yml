@@ -3,32 +3,51 @@ orbs:
   orb-tools: circleci/orb-tools@volatile
   ghostinspector: ghostinspector/test-runner@dev:02
 
-# publish dev orb
-# - can this be referenced inline
-# test against orb scenarios
-# [ ] better info for bad API key
-# [ ] debug?
-# [ ] startUrl
-# [ ] extraParams
-# publish prod orb
+executors:
+  docker-executor:
+    docker: 
+      - image: docker:17.05.0-ce-git
 
 jobs:
-  execute-test-orb:
-    docker: 
-      - image: ghostinspector/test-runner-standalone
+  execute-test-command:
+    executor: ghostinspector/default
     steps:
       - ghostinspector/execute-test:
           start-url: https://ghostinspector.com/
           id: 5bdb20218faf2b12926dd9c9
           extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
           wait: true
+  execute-suite-command:
+    executor: ghostinspector/default
+    steps:
       - ghostinspector/execute-suite:
           start-url: https://ghostinspector.com/
           id: 5bdb1f808faf2b12926dcd62
           extra-params: '{"paramOne": "expected value 1", "paramTwo": "expected value 2"}'
           wait: true
-
+  test-standalone-app-command:
+    executor: docker-executor
+    steps:
+      - setup_remote_docker
+      - run:
+          name: Set up temporary docker network
+          command: docker network create gi-docker-network
+      - run:
+          name: Start your application container, specifying application port and docker network
+          command: |
+            docker pull ghostinspector/standalone-app:latest
+            docker run -d \
+              --network gi-docker-network \
+              --name test-application \
+              ghostinspector/standalone-app:latest --sha=b1692b69eb664eb299ca3d9c702246244df153e5
+      - ghostinspector/test-standalone-app:
+          suite-id: 5bdb3d05d69d3646d07b4af1
+          network: gi-docker-network
+          extra-params: '{"sha":"b1692b69eb664eb299ca3d9c702246244df153e5"}'
+          vpn-target: test-application:8000
 workflows:
   test:
     jobs:
-      - execute-test-orb
+      - execute-test-command
+      - execute-suite-command
+      - test-standalone-app-command
