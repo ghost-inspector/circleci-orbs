@@ -20,7 +20,7 @@ We offer three commands for testing your application using CircleCI orbs and Gho
  * `ghostinspector/test-docker-app` - Execute your test suite against your containerized application 
 
 ### Set up
-Set up an environment variable in your CircleCI build called `GI_API_KEY`, this will be used
+Set up an environment variable in your CircleCI build called `GI_API_KEY`. This will be used
 automatically by all commands. You may also pass the `api-key` parameter explicitly.
 
 ### Examples
