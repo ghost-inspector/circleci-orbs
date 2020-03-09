@@ -1,9 +1,12 @@
 version: 2.1
 
 description: |
-  An orb for executing your Ghost Inspector tests and suites within your CircleCI build environment.
+  Execute your Ghost Inspector tests and suites within your CircleCI build environment.
   This orb provides commands to get up and running quicky with your Ghost Inspector integration.
-  The source for this Orb can be found here: https://github.com/ghost-inspector/circleci-orbs
+
+display:
+  source_url: https://github.com/ghost-inspector/circleci-orbs
+  home_url: https://ghostinspector.com/
 
 examples:
   execute-ghost-inspector-test:
