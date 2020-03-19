@@ -1,7 +1,7 @@
 version: 2.1
 orbs:
   orb-tools: circleci/orb-tools@volatile
-  ghostinspector: ghostinspector/test-runner@dev:02
+  ghostinspector: ghostinspector/test-runner@1.0.0
 
 executors:
   docker-executor:
