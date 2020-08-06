@@ -13,7 +13,7 @@ examples:
     usage:
       version: 2.1
       orbs:
-        ghostinspector: ghostinspector/test-runner@1.0.0
+        ghostinspector: ghostinspector/test-runner@1.0.2
       jobs:
         build:
           executor: ghostinspector/default
@@ -27,7 +27,7 @@ examples:
     usage:
       version: 2.1
       orbs:
-        ghostinspector: ghostinspector/test-runner@1.0.0
+        ghostinspector: ghostinspector/test-runner@1.0.2
       jobs:
         build:
           executor: default
@@ -41,7 +41,7 @@ examples:
     usage:
       version: 2.1
       orbs:
-        ghostinspector: ghostinspector/test-runner@1.0.0
+        ghostinspector: ghostinspector/test-runner@1.0.2
       executors:
         docker-executor:
           docker:

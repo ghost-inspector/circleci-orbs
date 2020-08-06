@@ -28,7 +28,7 @@ Example executing a test suite:
 ```
 version: 2.1
 orbs:
-  ghostinspector: ghostinspector/test-runner@1.0.0
+  ghostinspector: ghostinspector/test-runner@1.0.2
 jobs:
   build:
     executor: ghostinspector/default
@@ -42,7 +42,7 @@ Example executing a single test:
 ```
 version: 2.1
 orbs:
-  ghostinspector: ghostinspector/test-runner@1.0.0
+  ghostinspector: ghostinspector/test-runner@1.0.2
 jobs:
   build:
     executor: ghostinspector/default
@@ -57,7 +57,7 @@ Example executing a test suite against a running Docker container:
 ```
 version: 2.1
 orbs:
-  ghostinspector: ghostinspector/test-runner@1.0.0
+  ghostinspector: ghostinspector/test-runner@1.0.2
 executors:
   docker-executor:
     docker:
